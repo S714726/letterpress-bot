@@ -24,6 +24,7 @@ import me.rickychang.lpb.imageparser.IPhone5Parser
 import me.rickychang.lpb.imageparser.MultiDeviceParser
 import me.rickychang.lpb.imageparser.InvalidImageException
 import me.rickychang.lpb.board.InvalidTilesException
+import me.rickychang.lpb.replay.ReplayUtils
 
 class SimpleStatusListener(myUserId: Long, twitterRestClient: Twitter, boardSolver: BoardSolver) extends UserStreamListener with Logging {
 
@@ -39,6 +40,16 @@ class SimpleStatusListener(myUserId: Long, twitterRestClient: Twitter, boardSolv
         if (!attachedMedia.isEmpty) {
           logger.debug("Fetching image: %s".format(attachedMedia.head.getMediaURL))
           val img = ImageIO.read(new URL(attachedMedia.head.getMediaURL))
+          val playedWords = status.getURLEntities.map(_.getDisplayURL).map{
+            (url: String) =>
+              val javaUrl = new URL(url)
+            if (javaUrl.getHost == "replay.letterpress.atebits.com" &&
+                javaUrl.getRef.length == 32)
+              ReplayUtils.fetchJson("http://replay.letterpress.atebits.com" +
+                                    javaUrl.getRef)
+            else
+              ""
+          }.map(ReplayUtils.playedWords(_)).reduceLeft(_ | _)
           val tweetText = getResponseTweetText(img, status.getUser.getScreenName)
           if (tweetText.isDefined) {
             val responseUpdate = new StatusUpdate(tweetText.get)
