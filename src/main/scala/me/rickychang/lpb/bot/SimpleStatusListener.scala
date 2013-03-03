@@ -50,7 +50,7 @@ class SimpleStatusListener(myUserId: Long, twitterRestClient: Twitter, boardSolv
             else
               ""
           }.map(ReplayUtils.playedWords(_)).reduceLeft(_ | _)
-          val tweetText = getResponseTweetText(img, status.getUser.getScreenName)
+          val tweetText = getResponseTweetText(img, playedWords, status.getUser.getScreenName)
           if (tweetText.isDefined) {
             val responseUpdate = new StatusUpdate(tweetText.get)
             responseUpdate.setInReplyToStatusId(status.getId)
@@ -69,9 +69,9 @@ class SimpleStatusListener(myUserId: Long, twitterRestClient: Twitter, boardSolv
     }
   }
 
-  private def getResponseTweetText(screenshot: BufferedImage, sender: String): Option[String] = {
+  private def getResponseTweetText(screenshot: BufferedImage, playedWords: Set[String], sender: String): Option[String] = {
     val b = bParser.parseGameBoard(screenshot)
-    boardSolver.findWords(b, NumWordsToReturn) match {
+    boardSolver.findWords(b, playedWords, NumWordsToReturn) match {
       case Some(words) => Some(BotUtil.truncateTweet("@%s %s".format(sender, words)))
       case _ => None
     }
